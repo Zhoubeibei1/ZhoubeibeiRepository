@@ -12,8 +12,8 @@
 
 int menu()
 {
-	int select=0;
 	char select_c[20];
+	int select=0;
 	while(1){
 		switch(trans_data.flag){
 		case 0x00:
@@ -35,17 +35,18 @@ int menu()
 		case 0x10:
 			printf("请问你想要注册管理员账号还是普通账号?\n");
 			printf("0:管理员\n");
-			printf("其他:普通账号\n");
+			printf("其他:普通账号\n>");
 			if(!scanf("%d",&select)){
 				fprintf(stderr,"格式错误\n");
-				continue;
+				while(getchar()!='\n');
+				break;
 			}
 			if(!select){
 				trans_data.addre.juris = 0;
 				printf("申请管理员账户请输入秘钥>");
 				scanf("%d",&select);
 				if(select!=MIKEY){
-					continue;
+					break;
 				}
 			}else{
 				trans_data.addre.juris = 1;
@@ -55,44 +56,32 @@ int menu()
 			printf("请输入账号:");
 			if(!scanf("%d",&trans_data.addre.id)){
 				fprintf(stderr,"账号格式错误\n");
-				continue;
+				break;
 			}
 			while(getchar()!='\n');
 			printf("请输入密码:");
 			if(scanf("%s",trans_data.addre.passwd)>19){
 				fprintf(stderr,"密码格式错误\n");
-				continue;
+				break;
 			}
 			while(getchar()!='\n');              
 			trans_data.flag = 0x11;
 			info_login();
 			break;
 		case 0x12:
-			printf("注册成功\n");
-			printf("是否用当前账号直接登录(y)\n");
+			printf("注册用户成功\n");
+			printf("请问是否直接登录:是(y)或者否(任意键)\n");
 			scanf("%s",select_c);
+			while(getchar()!='\n');
 			if(!strncmp(select_c,"y",1)){
-				if(trans_data.addre.juris){
-					trans_data.flag = 0x30;
-				}else{
-					trans_data.flag = 0x40;
-				}
+				trans_data.flag = 0x40;
 			}else{
-				trans_data.flag = 0x00;
+				trans_data.flag = 0x30;
 				return 0;
 			}
-			while(getchar()!='\n');
 			break;
 		case 0x13:
-			printf("注册失败:%s\n",trans_data.myerrno);
-			printf("请问是否继续注册:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x10;
-			}else{
-				trans_data.flag = 0x00;
-			}
-			while(getchar()!='\n');
+			if(feedbook(0x10,0x00,"注册",1)<0)return 0;
 			break;
 			//登录态                             
 		case 0x20:                               
@@ -114,31 +103,21 @@ int menu()
 			break;                               
 			//完成登录基础态                     
 		case 0x22:
+			//if(feedbook(0x40,0x30,"登录",0)<0)return 0;
 			printf("登录成功\n");
-			if(trans_data.addre.juris){
-				trans_data.flag = 0x30;
-				return 0;
-			}else{
+			if(trans_data.addre.juris==0){
 				trans_data.flag = 0x40;
-				return 0;
+			}else{
+				trans_data.flag = 0x30;
 			}
 			break;
 		case 0x23:
-			printf("登录失败:%s\n",trans_data.myerrno);
-			printf("请问是否继续登录:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x20;
-			}else{
-				trans_data.flag = 0x00;
-				return 0;
-			}
+			if(feedbook(0x20,0x00,"登录",1)<0)return 0;
 			break;
 		case 0x30:
 			printf("进入用户界面\n");
 			printf("选择你需要的功能\n");
-			printf("1.查询信息\n2.修改信息\n3.退出>\n");
+			printf("1.查询信息\n2.修改信息\n3.退出\n>");
 			scanf("%d",&select);
 			while(getchar()!='\n');
 			if(select==1){
@@ -148,7 +127,8 @@ int menu()
 				trans_data.flag = 0x32;
 				continue;
 			}else if(select == 3){
-				trans_data.flag = 0x00;
+				trans_data.flag = 0x01;
+				info_login();
 				return 0;
 			}else{
 				continue;
@@ -191,20 +171,14 @@ int menu()
 			info_login();
 			break;
 		case 0x33:
-			printf("操作失败:%s\n",trans_data.myerrno);
-			printf("是否继续查找(y)\n>");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x31;
-			}else{
-				trans_data.flag = 0x30;
-			}
-			return 0;
+			if(feedbook(0x31,0x30,"查询",1)<0)return 0;
 			break;
 		case 0x39:
 			print(trans_data.addre);
 			trans_data.flag = 0x30;
+			break;
+		case 0x3F:
+			if(feedbook(0x31,0x30,"查询",0)<0)return 0;
 			break;
 		case 0x40:
 			printf("进入管理员用户界面\n");
@@ -266,26 +240,10 @@ int menu()
 			info_login();
 			break;
 		case 0x52:
-			printf("是否继续添加账号(y)>");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x50;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x50,0x40,"添加",0)<0)return 0;
+			break;
 		case 0x53:
-			printf("添加失败:%s\n",trans_data.myerrno);
-			printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x50;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x50,0x40,"添加",1)<0)return 0;
 			break;
 		case 0x54:
 			printf("请输入要删除用户的ID>");
@@ -295,27 +253,11 @@ int menu()
 			info_login();
 			break;
 		case 0x56:
-			printf("删除用户成功\n");
-			printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x54;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x54,0x40,"删除",0)<0)return 0;
+			break;
 		case 0x57:
-			printf("删除用户失败:%s\n",trans_data.myerrno);
-			printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x54;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x54,0x40,"删除",1)<0)return 0;
+			break;
 		case 0x58:
 			printf("输入要修改用户的信息\n");
 			printf("请输入要修改用户的ID>");
@@ -352,27 +294,11 @@ int menu()
 			info_login();
 			break;
 		case 0x5A:
-			printf("修改用户成功\n");
-			printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x58;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x58,0x40,"修改",0)<0)return 0;
+			break;
 		case 0x5B:
-			printf("修改用户失败:%s\n",trans_data.myerrno);
-			printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x54;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x58,0x40,"修改",1)<0)return 0;
+			break;
 		case 0x5C:
 			printf("选择查找方式:1.账号,2.姓名,3.手机号码,4.所有信息,5.退出\n>");
 			scanf("%d",&select);
@@ -403,28 +329,10 @@ int menu()
 			break;
 		case 0x5E:
 			print_all(trans_data.addre);
-			printf("查询用户成功\n");
-			printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x5C;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x5C,0x40,"查询",0)<0)return 0;
 			break;
 		case 0x5F:
-			printf("查询用户失败:%s\n",trans_data.myerrno);
-			printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
-			scanf("%s",select_c);
-			while(getchar()!='\n');
-			if(!strncmp(select_c,"y",1)){
-				trans_data.flag = 0x5C;
-			}else{
-				trans_data.flag = 0x40;
-				return 0;
-			}
+			if(feedbook(0x5C,0x40,"查询",1)<0)return 0;
 			break;
 		default:
 			break;
@@ -475,18 +383,38 @@ int info_login()
 }
 int print(struct shuju pdata)
 {
-	printf("ID:%d\tNAME:%s\tAGE:%d\tNUMBER:%s\tSECTION:%s\n",
-			pdata.id,pdata.name,pdata.age,
+	printf("账号:%s\n姓名:%s\n性别:%d\n手机号码:%s\n部门:%s\n",
+			trans_data.search,pdata.name,pdata.age,
 			pdata.number,pdata.section);
 	return 0;
 }
 int print_all(struct shuju pdata)
 {
-	printf("ID:%d\tPASSWD:%s\tNAME:%s\tADDRESS:%s\t\
-			AGE:%d\tSEX:%c\tNUMBER:%s\tSALARY:%d\t\
-			SECTION:%s\tJURIS:%d\n",
-			pdata.id,pdata.passwd,pdata.name,pdata.address,
+	char *str1[] = {"管理员","普通用户"};
+	printf("账号:%s\n密码:%s\n姓名:%s\n地址:%s\n年龄:%d\n性别:%c\n手机号码:%s\n工资:%d\n部门:%s\n权限:%s\n",
+			trans_data.search,pdata.passwd,pdata.name,pdata.address,
 			pdata.age,pdata.sex,pdata.number,pdata.salary,
-			pdata.section,pdata.juris);
+			pdata.section,str1[!(!(pdata.juris))]);
+	printf("---------------------------------------------------\n");
+	return 0;
+}
+int feedbook(int sflag,int dflag,char* result,int yn)
+{
+	char select_c[20];
+	memset(select_c,0,sizeof(select_c));
+	if(yn){
+		printf("%s用户失败:%s\n",result,trans_data.myerrno);
+	}else{
+		printf("%s用户成功\n",result);
+	}
+	printf("请问是否继续当前操作:是(y)或者否(任意键)\n");
+	scanf("%s",select_c);
+	while(getchar()!='\n');
+	if(!strncmp(select_c,"y",1)){
+		trans_data.flag = sflag;
+	}else{
+		trans_data.flag = dflag;
+		return -1;
+	}
 	return 0;
 }

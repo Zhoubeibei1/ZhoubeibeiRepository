@@ -32,8 +32,8 @@ clean:
 test:
 	./bin/test
 git:
-	cp -r ../../staff/ ~/GitHub/ZhoubeibeiRepository/
-	~/GitHub/ZhoubeibeiRepository/push.sh staff ./staff/
+	# cp -r ../../staff/ ~/GitHub/ZhoubeibeiRepository/
+	~/GitHub/ZhoubeibeiRepository/push.sh staff ../../staff/
 
 
 

@@ -77,9 +77,16 @@ int network_epoll(){
 					}
 					break;
 				}
-				printf("flag:%x\n",trans_data.flag);
-				printf("*****************\n");
-				if(trans_data.flag==0x11){
+				printf("flag:%x\n",trans_data.flag==0x01);
+				if(trans_data.flag==0x01){
+					bzero(sql,sizeof(sql));    
+					sprintf(sql,"delete from zaixianyonghu where id=%d",trans_data.addre.id);
+					if(sqlite3_exec(staff,sql,NULL,NULL,&errmsg)!=0){  
+						fprintf(stderr,"sqlite3_exec:%s\n",errmsg);
+						return -1;                                               
+					}
+					trans_data.flag = 0x00;
+				}else if(trans_data.flag==0x11){
 					if(register_account(revents[i].data.fd)<0){
 						printf("用户注册失败\n");
 					}
@@ -102,7 +109,6 @@ int network_epoll(){
 				}else if(trans_data.flag == 0x59){
 					modify_data(revents[i].data.fd);
 				}else if(trans_data.flag>=0x41&&trans_data.flag<=0x44){
-					printf("*****************\n");
 					inquire_data(revents[i].data.fd);
 				}
 
@@ -177,7 +183,6 @@ int login_account(int newfd)
 	    return -1;                                        
 	}
 	//权限读取
-	printf("juris:%d\n",trans_data.addre.juris);
 	trans_data.addre.juris = (*resultp[TABLE_LEN+9]-48);
 	printf("juris:%d\n",trans_data.addre.juris);
 	sqlite3_free_table(resultp);                      
@@ -334,12 +339,13 @@ int modify_message(int newfd)
 	char * errmsg = NULL;      
 	char sql[256];
 	bzero(sql,sizeof(sql));                                      
-	sprintf(sql,"UPDATE into datum set id=%d where name=\"%s\" \
-			and address = \"%s\" and number = \"%s\"",
-			trans_data.addre.id,
+	sprintf(sql,"UPDATE datum SET name=\"%s\" \
+			and address = \"%s\" and number = \"%s\"\
+			where id = %d",
 			trans_data.addre.name,
 			trans_data.addre.address,
-			trans_data.addre.number);
+			trans_data.addre.number,
+			trans_data.addre.id);
 	if(sqlite3_exec(staff,sql,NULL,NULL,&errmsg)!=0){  
 	    fprintf(stderr,"sqlite3_exec:%s\n",errmsg);
 		sprintf(trans_data.myerrno,"用户在线数据更新失败\n");

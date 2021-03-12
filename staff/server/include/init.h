@@ -51,7 +51,7 @@ struct shuju{
 
 
 struct trans{
-	int flag;
+	unsigned char flag;
 	char myerrno[256];
 	char search[20];
 	struct shuju addre;
